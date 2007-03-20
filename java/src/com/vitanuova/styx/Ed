@@ -1,0 +1,3 @@
+x/public.*{\n(		.*\n|\n)+	}/s/(public class (.*) extends(.|\n)*)}/\1	int mtype() { return M\2; }\n	}
+,x g/public int mtype/s/public int mtype.*return M(.*);.*/&\n		public String mname(){ return "\1"; }
+s/int (f.get\([^)]*\))/((int)(\1\&0xFF))/g :414
