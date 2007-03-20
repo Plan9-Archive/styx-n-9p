@@ -9,7 +9,7 @@ package com.vitanuova.styx;
  *	StyxReader
  *
  * Copyright © 2005 Vita Nuova Holdings Limited [C H Forsyth, forsyth@vitanuova.com]
- * Subject to the terms of the LGPL (google for a copy)
+ * Subject to the terms of the MIT-template (google for a copy)
  */
 
 import java.nio.ByteBuffer;	// not ideal, but will do for now
