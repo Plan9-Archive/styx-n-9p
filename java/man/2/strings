@@ -1,0 +1,47 @@
+.TH STRINGS 2
+.SH NAME
+strings: quote, bytes \- string operations
+.SH SYNOPSIS
+.EX
+package com.vitanuova.lib;
+
+public class Strings {
+    public static final String quote(String s);
+    public static final String quote(String s, String ccl);
+    public static final String quote(String args[], String ccl);
+    public static final byte[] bytes(String s);
+}
+.EE
+.SH DESCRIPTION
+.B Strings
+provides a few functions to manipulate Java strings.
+.TP
+.BI quote( args,\ ccl )
+Return a single string that contains the strings in
+.I args
+separated by spaces, with each string
+quoted according to the conventions of the Plan 9 shell
+.I rc
+or Inferno's
+.IR sh :
+each string
+is surrounded by single quotes if it contains space, tab, newline, a single quote, or one of the
+characters in
+.I ccl
+(if that is not null).
+Single quotes within a quoted string
+are doubled.
+.TP
+.BI quote( s,\ ccl )
+.br
+.BI quote( s )
+Return a single string in which
+.I s
+has been quoted as above.
+.TP
+.BI bytes( s )
+Return an array of bytes containing the UTF-8 representation of the String
+.IR s .
+An empty array (ie, of length zero) is returned for a null string.
+.SH SOURCE
+.B /com/vitanuova/lib/Strings.java

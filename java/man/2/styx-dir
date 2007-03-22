@@ -1,0 +1,50 @@
+.TH STYX-DIR 2
+.SH NAME
+styx: Dir \- Styx file and directory status
+.SH SYNOPSIS
+.EX
+package com.vitanuova.styx;
+
+public class Dir {
+	public String	name;		// last element of path name
+	public String	uid;			// user name
+	public String	gid;			// group name
+	public String	muid;		// last modifier name
+	public Qid		qid;			// unique ID from seerver
+	public int		mode;		// permissions (see below)
+	public int		atime;		// last access time in seconds from Epoch
+	public int		mtime;		// last modification time in seconds from Epoch
+	public long	length;		// length in bytes (0 for directory)
+
+	// ``system-modified data'' (leave them 0 or ~0)
+	public int		dtype;		// server type
+	public int		dev;			// server subtype
+
+	// mode bits in Dir.mode used by the protocol
+	public static final int	DMDIR = 1<<31;		// directory
+	public static final int	DMAPPEND = 1<<30;	// append-only file
+	public static final int	DMEXCL = 1<<29;		// exclusive use file
+	public static final int	DMAUTH = 1<<27;		// authentication file
+	public static final int	DMTMP  = 1<<26;		// not-backed-up
+
+	// permission bits (for others; use <<3 for group, <<6 for owner)
+	public static final int DMREAD = 1<<2;	// read
+	public static final int DMWRITE = 1<<1;	// write
+	public static final int DMEXEC = 1<<0;	// execute
+
+	public Dir();
+	public Dir(String name, Qid qid, long length, int mode);
+
+	public String toString();
+	public String modefmt();
+	public static String modefmt(int m);
+	public static final Dir nulldir(); // used for `no change' prototype in wstat calls
+}
+.EE
+.SH DESCRIPTION
+.SH SOURCE
+.B /com/vitanuova/styx/Dir.java
+.SH SEE ALSO
+.IR styx (2),
+.IR styx-styxclient (2)
+.IR styx-qid (2),

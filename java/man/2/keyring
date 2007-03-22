@@ -1,0 +1,74 @@
+.TH KEYRING 2
+.SH NAME
+keyring \- public-key Styx authentication
+.SH SYNOPSIS
+.EX
+package com.vitanuova.auth;
+
+public class Keyring {
+    public static class  AuthenticationException extends Exception;
+    public static class  LocalAuthErr extends AuthenticationException;
+    public static class  RemoteAuthErr extends AuthenticationException;
+    public static class  InvalidCertificateException extends AuthenticationException;
+    public static class InvalidKeyException extends AuthenticationException;
+
+    public Keyring() throws NoSuchAlgorithmException;
+
+    public class InfPrivateKey {
+        public InfPrivateKey(PrivateKey pk, String owner);
+        public InfPrivateKey(String s) throws InvalidKeyException;
+        public String text();           // actual textual representation
+        public String toString();    // pk.toString()+owner
+    }
+
+    public class InfPrivateKey {
+        public InfPrivateKey(PrivateKey pk, String owner);
+        public InfPrivateKey(String s) throws InvalidKeyException;
+        public String text();           // actual textual representation
+        public String toString();    // sk.toString()+owner
+        public InfPublicKey getpk() throws InvalidKeyException;
+   }
+
+    public class Authinfo {
+        public InfPrivateKey   mysk;
+        public InfPublicKey    mypk;
+        public Certificate     cert;   // signature of my public key
+        public InfPublicKey    spk;    // signer's public key
+        public BigInteger      alpha;  // diffie-hellman parameters
+        public BigInteger      p;
+
+        public AuthInfo(InfPrivateKey, InfPublicKey, Certificate, InfPublicKey, BigInteger, BigInteger);
+    }
+
+    public final AuthInfo readauthinfo(ReadableByteChannel fd) throws Exception;
+
+    public class Certificate {
+        public String   sa;   // signature algorithm
+        public String   ha;   // hash algorithm
+        public String   signer;  // name of signer
+        public int      exp;   // expiration time (seconds from Epoch, 0=never)
+
+        public Certificate(String sa, String ha, String signer, int exp, BigInteger rsa);
+        public Certificate(String s) throws InvalidCertificateException;
+        public final String text();   // actual representation
+    }
+
+    public class AuthResult {
+        public Authinfo info;
+        public byte[]   secret;
+    }
+
+    public final AuthResult basicauth(ReadableByteChannel rfd, WritableByteChannel wfd, Authinfo info) throws AuthenticationException;
+    public final void setlinecrypt(ReadableByteChannel rfd, WritableByteChannel wfd, String role, String[] algs) throws IOException;
+    public final AuthResult auth(ReadableByteChannel rfd, WritableByteChannel wfd, String role, Authinfo info, String[] algs) trhows AuthenticationException, IOException;
+
+    public final Certificate sign(InfPrivateKey sk, int exp, byte a[]) throws NoSuchAlgorithmException;
+    public final boolean verify(InfPublicKey pk, Certificate c, byte a[]) throws NoSuchAlgorithmException;
+
+    public static final BigInteger rsadecrypt(BigInteger n, PrivateKey rsa);
+    public static final boolean rsaverify(BigInteger m, BigInteger sig, RSAPublicKey key);
+}
+.EE
+.SH DESCRIPTION
+.SH SOURCE
+.B com/vitanuova/auth/Keyring.java

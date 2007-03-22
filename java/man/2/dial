@@ -1,0 +1,87 @@
+.TH DIAL 2
+.SH NAME
+dial: dial, errstr, netmkaddr, werrstr \- make network connections
+.SH SYNOPSIS
+.EX
+package com.vitanuova.lib;
+
+import java.nio.channels.SocketChannel;
+
+public class Dial {
+    public final static String  errstr();
+
+    public static final SocketChannel  dial(String dest, String local);
+    public static final String  netmkaddr(String addr, String defnet, String defsvc);
+}
+.EE
+.SH DESCRIPTION
+.B Dial
+supplies functions to make network connections using a textual address syntax
+adopted from Plan 9 and Inferno, having one of the forms:
+.IP
+.IB network ! netaddr ! service
+.br
+.IB network ! netaddr
+.br
+.IB netaddr
+.PP
+where
+.I network
+is either
+.B net
+or
+.BR tcp ;
+.I netaddr
+is a host name, a domain name, or a network address;
+and
+.I service
+is either a port number or a symbolic service name.
+.B Dial
+currently has built-in mappings for the service names
+.B styx
+(port 6666),
+.B 9fs
+(port 964),
+and
+.B infsched
+(port 6678).
+.TP
+.BI dial( dest,\ local )
+Return a SocketChannel connected to the address
+.IR dest .
+If there are several possible translations for
+.I dest
+(eg, a domain name has several possible Internet addresses),
+.B dial
+tries each in turn until it makes a connection (or none is left).
+If
+.I local
+is not a null string,
+use the address it represents as the local network address.
+.TP
+.BI netmkaddr( addr,\ defnet,\ defsvc )
+Return a textual address of the form expected by
+.BR dial ,
+adding default network and service components to complete the given
+.I addr
+if it lacks them (and the corresponding
+.I defnet
+or
+.I defsvc
+string is not null).
+.SH SOURCE
+.B /com/vitanuova/lib/Dial.java
+.SH DIAGNOSTICS
+.B Dial.dial
+returns null if it fails.
+A subsequent call to
+.B errstr
+will return a textual diagnostic for the most recently-failed call.
+.SH BUGS
+.B errstr
+should be global to this Java library.
+.br
+The
+.I local
+string is ignored by
+.BR Dial.dial .

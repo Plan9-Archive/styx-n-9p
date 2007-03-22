@@ -1,0 +1,34 @@
+.TH ENCODING 2
+.SH NAME
+encoding: encoding, base64 \- textual encodings of binary
+.SH SYNOPSIS
+.EX
+package com.vitanuova.lib;
+
+public abstract class Encoding {
+    public abstract String  enc(byte[] a);
+    public abstract byte[]  dec(String s);
+}
+
+public class Base64 extends Encoding;
+.EE
+.SH DESCRIPTION
+.B Encoding
+is an class abstraction that represents an encoding of a byte array as text.
+It provides two operations:
+.B enc
+returns a String that contains the chosen encoding of array
+.I a
+as text;
+.B dec
+returns a byte array that contains the binary data previously encoded as text in String
+.I s .
+.PP
+.B Base64
+is an
+Encoding
+that implements base-64 encoding of binary as text.
+.SH SOURCE
+.B /com/vitanuova/lib/Base64.java
+.br
+.B /com/vitanuova/lib/Encoding.java

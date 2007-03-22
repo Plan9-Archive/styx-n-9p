@@ -1,0 +1,36 @@
+.TH STYX-QID 2
+.SH NAME
+styx: Qid \- Styx unique ID representation
+.SH SYNOPSIS
+.EX
+package com.vitanuova.styx;
+
+public class Qid {
+	public long	path;
+	public int		vers;
+	public int		qtype;
+
+	// Qid.qtype type bits
+	public static final int	QTDIR = 0x80;		// directory
+	public static final int	QTAPPEND = 0x40;	// append-only file
+	public static final int	QTEXCL = 0x20;	// exclusive-use file
+	public static final int	QTAUTH = 0x08;	// authentication file
+	public static final int	QTTMP = 0x04;		// not-backed-up file (symbolic link in 9P200.u)
+	public static final int	QTFILE = 0x00;		// plain file
+
+	public Qid(long path, int qtype);
+	public Qid(long path, int vers, int qtype);
+
+	public boolean equals(Qid q);
+	public int hashCode();
+	public String toString();
+	public String qidtype();
+}
+.EE
+.SH DESCRIPTION
+.SH SOURCE
+.B /com/vitanuova/styx/Qid.java
+.SH SEE ALSO
+.IR styx (2),
+.IR styx-dir (2),
+.IR styx-styxclient (2)
