@@ -1,0 +1,11 @@
+#!/bin/rc
+# generate twiddly little Java source files for each exception
+set=(AuthProtoErr LocalAuthErr RemoteAuthErr InvalidCertificate InvalidSignature InvalidCertificateSet InvalidKey ValidationFailed)
+for(a in $set){
+	echo 'package plan9.auth;
+
+public class '^$a^' extends AuthenticationException {
+	public '^$a^'(String s){ super(s); }
+	public '^$a^'(String s, Throwable cause){ super(s, cause); }
+}' >$a.java
+}
