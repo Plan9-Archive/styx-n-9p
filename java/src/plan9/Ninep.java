@@ -13,8 +13,11 @@ package plan9;
  * Subject to the terms of the MIT-template (google for a copy)
  */
 
+import plan9.lib.Strings;
+import static plan9.lib.Strings.utflen;
+
 import java.nio.ByteBuffer;	// not ideal, but will do for now
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.ByteChannel;
 
 public class Ninep {
 
@@ -39,8 +42,8 @@ public class Ninep {
 	public static final int	ORCLOSE = 64; 	// or'ed in, remove on close
 	public static final int OEXCL = 0x1000;	// exclusive-create
 
-	public static class BAD extends Exception {
-		BAD(String s){ super("Ninep: "+s); }
+	public static class FormatError extends Exception {
+		FormatError(String s){ super("Ninep: "+s); }
 	}
 
 	/* message types; don't change */
@@ -93,7 +96,7 @@ public class Ninep {
 	private static final int OFFSET = BIT64SZ;
 	private static final int H = BIT32SZ + BIT8SZ + BIT16SZ;	// minimum header length: size[4] type tag[2]
 
-	public abstract class Smsg {
+	public static abstract class Smsg {
 		public abstract int mtype();
 		public abstract String mname();
 		abstract void  pack(ByteBuffer b);
@@ -104,18 +107,18 @@ public class Ninep {
 		public abstract boolean isTmsg();
 	}
 
-	public abstract class Tmsg extends Smsg {
+	public static abstract class Tmsg extends Smsg {
 		public int	tag = NOTAG;
 
 		Tmsg(){}
-		public final Tmsg read(ReadableByteChannel fd, int msize) { return null; }
+		public final Tmsg read(ByteChannel fd, int msize) { return null; }
 		protected final void packtag(ByteBuffer b){ p16(b, tag); }
 		protected Tmsg(ByteBuffer b){ tag = g16(b); }
 		public final boolean isTmsg(){ return true; };
 	}
 
 	public class Unpack {
-		public final Tmsg unpackT(ByteBuffer b) throws BAD {
+		public final Tmsg unpackT(ByteBuffer b) throws FormatError {
 			/* length has already been consumed */
 			switch(b.get()){
 			case MTversion:
@@ -145,10 +148,10 @@ public class Ninep {
 			case MTwstat:
 				return new Twstat(b);
 			default:
-				throw new BAD("invalid Tmsg type");
+				throw new FormatError("invalid Tmsg type");
 			}
 		}
-		public final Rmsg unpackR(ByteBuffer b) throws BAD {
+		public final Rmsg unpackR(ByteBuffer b) throws FormatError {
 			/* length has already been consumed */
 			switch(b.get()){
 			case MRversion:
@@ -180,7 +183,7 @@ public class Ninep {
 			case MRerror:
 				return new Rerror(b);
 			default:
-				throw new BAD("invalid Rmsg type");
+				throw new FormatError("invalid Rmsg type");
 			}
 		}
 	}
@@ -250,7 +253,7 @@ public class Ninep {
 			packtag(b);
 			p32(b, afid);
 			puts(b, uname);
-			puts(b, uname);
+			puts(b, aname);
 		}
 		public int mtype() { return MTauth; }
 		public String mname(){ return "Tauth"; }
@@ -299,12 +302,12 @@ public class Ninep {
 		}
 		Tflush(ByteBuffer b){
 			super(b);
-			oldtag = g32(b);
+			oldtag = g16(b);
 		}
 		final void pack(ByteBuffer b){
 			b.put((byte)MTflush);
 			packtag(b);
-			p32(b, oldtag);
+			p16(b, oldtag);
 		}
 		public int mtype() { return MTflush; }
 		public String mname(){ return "Tflush"; }
@@ -347,11 +350,17 @@ public class Ninep {
 			return n;
 		}
 		public final String toString(){
-			String s = "Twalk("+tag+","+fid+","+newfid+",{";
-			for(int i = 0; i < names.length; i++)
-				s += "\""+names[i]+"\",";
-			s += "})";
-			return s;
+			StringBuilder bs = new StringBuilder(64);
+			bs.append(String.format("Twalk(%d,%d,%d,{", tag, fid, newfid));
+			for(int i = 0; i < names.length; i++){
+				bs.append('"');
+				bs.append(names[i]);
+				bs.append('"');
+				if(i+1 < names.length)
+					bs.append(',');
+			}
+			bs.append("})");
+			return bs.toString();
 		}
 	}
 	public class Topen extends Tmsg {
@@ -441,11 +450,9 @@ public class Ninep {
 			this.fid = fid; this.offset = offset; this.data = data;
 		}
 		public Twrite(int fid, long offset, ByteBuffer data, int n){
-			if(n < data.remaining()){
-				data = data.duplicate();
-				data.limit(data.position()+n);
-				data = data.slice();
-			}
+			data = data.duplicate();
+			data.limit(data.position()+n);
+			data = data.slice();
 			this.fid = fid; this.offset = offset; this.data = data;
 		}
 		Twrite(ByteBuffer b){
@@ -537,10 +544,10 @@ public class Ninep {
 		public Twstat(int fid, Dir stat){
 			this.fid = fid; this.stat = stat;
 		}
-		Twstat(ByteBuffer b) throws BAD {
+		Twstat(ByteBuffer b) throws FormatError {
 			super(b);
 			fid = g32(b);
-			int n = g16(b);	// TO DO: check this
+			g16(b);	// TO DO? could check this, but unpackdir should do the work
 			stat = unpackdir(b);
 		}
 		final void pack(ByteBuffer b){
@@ -653,13 +660,18 @@ public class Ninep {
 	}
 	public class Rerror extends Rmsg {
 		public String ename;
+		public boolean hangup;	// internal flag: connection error
 
 		public Rerror(int tag, String ename){
-			super(tag); this.ename = ename;
+			super(tag); this.ename = ename; this.hangup = false;
+		}
+		public Rerror(int tag, String ename, boolean hangup){
+			super(tag); this.ename = ename; this.hangup = hangup;
 		}
 		Rerror(ByteBuffer b){
 			super(b);
-			ename = gets(b);
+			this.ename = gets(b);
+			this.hangup = false;
 		}
 		final void pack(ByteBuffer b){
 			b.put((byte)MRerror);
@@ -739,11 +751,15 @@ public class Ninep {
 		public String mname(){ return "Rwalk"; }
 		public final int packedsize(){ return H+LEN+qids.length*QID; }
 		public final String toString(){
-			String s = "Rwalk({"+tag;
-			for(int i = 0; i < qids.length; i++)
-				s += ","+qids[i];
-			s += "})";
-			return s;
+			StringBuilder bs = new StringBuilder(64);
+			bs.append("Rwalk({");
+			bs.append(tag);
+			for(int i = 0; i < qids.length; i++){
+				bs.append(",");
+				bs.append(qids[i]);
+			}
+			bs.append("})");
+			return bs.toString();
 		}
 	}
 	public class Rcreate extends Rmsg {
@@ -853,13 +869,13 @@ public class Ninep {
 		public Rstat(int tag, Dir stat){
 			super(tag); this.stat = stat;
 		}
-		Rstat(ByteBuffer b) throws BAD {
+		Rstat(ByteBuffer b) throws FormatError {
 			super(b);
 			int n = g16(b);	// TO DO: consistency check
 			int pos = b.position();
 			stat = unpackdir(b);
 			if(b.position() != pos+n)
-				throw new BAD("bad Ninep stat count");	// TO DO: throw exception
+				throw new FormatError("bad Ninep stat count");	// TO DO: throw exception
 		}
 		final void pack(ByteBuffer b){
 			b.put((byte)MRstat);
@@ -880,17 +896,17 @@ public class Ninep {
 		return b.remaining() >= H && (b.get(BIT32SZ) & 1) != 0;
 	}
 
-	private static final Smsg readmsg(ReadableByteChannel chan, ByteBuffer b){
-		int l = b.remaining();
-		if(l < BIT32SZ)
-			return null;
-		int p = b.position();
-		int n = g32(b);
-		// TO DO
-		return null;
-	}
+//	private static final Smsg readmsg(ByteChannel chan, ByteBuffer b){
+//		int l = b.remaining();
+//		if(l < BIT32SZ)
+//			return null;
+//		int p = b.position();
+//		int n = g32(b);
+//		// TO DO
+//		return null;
+//	}
 
-	protected static final Dir unpackdir(ByteBuffer b) throws BAD {
+	protected static final Dir unpackdir(ByteBuffer b) throws FormatError {
 		int n = g16(b);	// TO DO: consistency check on format
 		int pos = b.position();
 		Dir d = new Dir();
@@ -906,7 +922,7 @@ public class Ninep {
 		d.gid = gets(b);
 		d.muid = gets(b);
 		if(b.position() != pos+n)
-			throw new BAD("Dir badly packed");
+			throw new FormatError("Dir badly packed");
 		return d;
 	}
 	public int packdirsize(Dir d){
@@ -940,7 +956,7 @@ public class Ninep {
 	}
 
 	private static final void puts(ByteBuffer b, String s){
-		byte[] a = bytes(s);
+		byte[] a = Strings.bytes(s);
 		p16(b, a.length);
 		b.put(a);
 	}
@@ -951,7 +967,7 @@ public class Ninep {
 		try{
 			return new String(a, "UTF-8");
 		}catch(java.io.UnsupportedEncodingException e){
-			return "Egosling";
+			throw new RuntimeException("UTF-8 String encoding unimplemented");
 		}
 	}
 
@@ -993,36 +1009,10 @@ public class Ninep {
 	}
 	private static final long g64(ByteBuffer b){
 		int n0 = g32(b);
-		return ((long)g32(b)<<32) | ((long)n0 & 0xFFFFFFFF);
+		return ((long)g32(b)<<32) | ((long)n0 & 0xFFFFFFFFL);
 	}
 
 	// misc support functions
-
-	public static final int utflen(String s){	// 16-bit unicode only
-		int n, l;
-
-		if(s == null)
-			return 0;
-		n = l = s.length();
-		for(int i = 0; i < l; i++){
-			int c;
-			if((c = s.charAt(i)) > 0x7F){
-				n++;
-				if(c > 0x7FF)
-					n++;
-			}
-		}
-		return n;
-	}
-	public static final byte[] bytes(String s){
-		if(s == null)
-			return new byte[0];
-		try{
-			return s.getBytes("UTF-8");
-		}catch(java.io.UnsupportedEncodingException e){
-			return "Egosling".getBytes();
-		}
-	}
 	public static final byte[] bytes(ByteBuffer b){
 		int n = b.remaining();
 		if(b.hasArray() && b.arrayOffset() == 0){
@@ -1033,48 +1023,5 @@ public class Ninep {
 		byte[] a = new byte[b.remaining()];
 		b.get(a);
 		return a;
-	}
-
-	public static final void dump(ByteBuffer  b){
-		String s = "buffer "+b.toString()+":";
-		int n = 0;
-		for(int i = b.position(); i < b.limit() && ++n < 64; i++)
-			s += " "+Integer.toString((int)b.get(i) & 0xFF, 16);
-		System.out.println(s);
-	}
-	public static final void dump(byte[] b, int i, int e, int max){
-		String s = "buffer "+b+":";
-		if(max < 0)
-			max = 64;
-		if(e > b.length)
-			e = b.length;
-		int n = 0;
-		for(; i < e && ++n < max; i++)
-			s += " "+Integer.toString((int)b[i] & 0xFF, 16);
-		System.out.println(s);
-	}
-	public static final void dump(byte[] b, int max){
-		dump(b, 0, b.length, max);
-	}
-	public static String S(byte[] a){
-		try{
-			return new String(a, "UTF-8");
-		}catch(java.io.UnsupportedEncodingException e){
-			return "Egosling";
-		}
-	}
-	public static String S(byte[] a, int o, int l){
-		try{
-			return new String(a, o, l, "UTF-8");
-		}catch(java.io.UnsupportedEncodingException e){
-			return "Egosling";
-		}
-	}
-	public static String S(ByteBuffer a){
-		try{
-			return new String(a.array(), a.arrayOffset()+a.position(), a.remaining(), "UTF-8");
-		}catch(java.io.UnsupportedEncodingException e){
-			return "Egosling";
-		}
 	}
 }
