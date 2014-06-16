@@ -2,11 +2,11 @@ package plan9;
 
 /*
  *
- * Styx definitions and message formatting
+ * Ninep definitions and message formatting
  *
  * TO DO
  *	simplify
- *	StyxReader
+ *	NinepReader
  *
  * Copyright © 2005 Vita Nuova Holdings Limited [C H Forsyth, forsyth@vitanuova.com]
  * Subject to the terms of the MIT-template (google for a copy)
@@ -15,7 +15,7 @@ package plan9;
 import java.nio.ByteBuffer;	// not ideal, but will do for now
 import java.nio.channels.ReadableByteChannel;
 
-public class Styx {
+public class Ninep {
 
 	/* fundamental constants; don't change */
 	public static final String VERSION = "9P2000";
@@ -39,7 +39,7 @@ public class Styx {
 	public static final int OEXCL = 0x1000;	// exclusive-create
 
 	public static class BAD extends Exception {
-		BAD(String s){ super("Styx: "+s); }
+		BAD(String s){ super("Ninep: "+s); }
 	}
 
 	/* message types; don't change */
@@ -858,7 +858,7 @@ public class Styx {
 			int pos = b.position();
 			stat = unpackdir(b);
 			if(b.position() != pos+n)
-				throw new BAD("bad Styx stat count");	// TO DO: throw exception
+				throw new BAD("bad Ninep stat count");	// TO DO: throw exception
 		}
 		final void pack(ByteBuffer b){
 			b.put((byte)MRstat);
