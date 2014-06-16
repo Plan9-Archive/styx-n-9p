@@ -1,4 +1,4 @@
-package com.vitanuova.lib;
+package plan9.lib;
 
 import java.util.StringTokenizer;
 import java.nio.channels.SocketChannel;

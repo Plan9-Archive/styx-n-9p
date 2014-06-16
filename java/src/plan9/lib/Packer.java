@@ -1,4 +1,4 @@
-package com.vitanuova.lib;
+package plan9.lib;
 
 // Vita Nuova, MIT Licence
 

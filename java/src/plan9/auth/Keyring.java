@@ -1,4 +1,4 @@
-package com.vitanuova.auth;
+package plan9.auth;
 
 /*
  * Inferno public key authentication
@@ -23,8 +23,8 @@ import javax.crypto.Cipher;
 import java.io.*;
 import java.util.Date;
 
-import com.vitanuova.lib.Encoding;
-import com.vitanuova.lib.Base64;
+import plan9.lib.Encoding;
+import plan9.lib.Base64;
 
 //java.security.interfaces.RSAKey, RSAPrivateCrtKey, RSAPrivateKey, RSAPublicKey
 // use instanceof applied to java.security.PublicKey

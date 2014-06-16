@@ -1,4 +1,4 @@
-package com.vitanuova.auth;
+package plan9.auth;
 
 /*
  * p9any/p9sk1 implementation

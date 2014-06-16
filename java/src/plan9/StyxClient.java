@@ -1,4 +1,4 @@
-package com.vitanuova.styx;
+package plan9;
 
 /*
  * styx client
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.io.EOFException;
 import java.io.IOException;
 
-import com.vitanuova.styx.Styx;
+plan9.Styx;
 
 public class StyxClient {
 

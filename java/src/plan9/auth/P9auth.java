@@ -1,4 +1,4 @@
-package com.vitanuova.auth;
+package plan9.auth;
 
 //
 // elements of Plan 9 authentication
@@ -18,7 +18,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
-import com.vitanuova.lib.Packer;
+import plan9.lib.Packer;
 
 public class P9auth {
 

@@ -1,4 +1,4 @@
-package com.vitanuova.lib;
+package plan9.lib;
 
 public class Base64 extends Encoding {
 

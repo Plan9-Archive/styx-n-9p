@@ -1,4 +1,4 @@
-package com.vitanuova.lib;
+package plan9.lib;
 
 public abstract class Encoding {
 	public abstract String enc(byte[] a);

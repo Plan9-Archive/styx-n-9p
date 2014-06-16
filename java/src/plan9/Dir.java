@@ -1,4 +1,4 @@
-package com.vitanuova.styx;
+package plan9;
 
 public class Dir {
 	public String	name;		// last element of path name
