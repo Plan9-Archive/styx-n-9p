@@ -1,6 +1,8 @@
 package plan9.lib;
 
-public abstract class Encoding {
-	public abstract String enc(byte[] a);
-	public abstract byte[] dec(String s);
+// TO DO: exceptions on bad encodings
+// from styx-n-9p.googlecode.com, MIT Licence
+public interface Encoding {
+	public String enc(byte[] a);
+	public byte[] dec(String s);
 }

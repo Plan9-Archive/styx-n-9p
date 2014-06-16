@@ -1,6 +1,7 @@
 package plan9.lib;
 
-public class Base64 extends Encoding {
+// from styx-n-9p.googlecode.com (MIT licence)
+public class Base64 implements Encoding {
 
 	public final String enc(byte[] a){
 		int n = a.length;
@@ -82,6 +83,9 @@ public class Base64 extends Encoding {
 				out[o++] = (byte) (b24>>8);
 				out[o++] = (byte) b24;
 				i = 0;
+				break;
+			default:
+				// impossible; sop to findbugs
 				break;
 			}
 		}
