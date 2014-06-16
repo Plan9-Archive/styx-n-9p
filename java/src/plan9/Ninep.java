@@ -1,6 +1,7 @@
 package plan9;
 
 /*
+ * A renaming of styx-n-9p.google.com's Styx package for Java
  *
  * Ninep definitions and message formatting
  *
