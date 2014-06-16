@@ -1,0 +1,87 @@
+•	basic exchange, following Inferno's auth (which is a modified STS)
+
+	— msg IO for message format
+	— exchange uses only printable forms (typically base64 encodings)
+	— IP (BigInteger) value as byte[] does not have leading 0
+
+	info:
+		mysk	my private key
+		mypk	my public key
+
+		cert		signature of my public key
+		spk		signer's public key
+
+		p		diffie hellman modulus
+		alpha	diffie hellman base
+			— Inferno has them as well-known between client and server
+			— they can be fixed; we'll use ones in the RFC, but allow proto=p9pk1 lines to set new ones
+
+	cert:
+		sa		signature algorithm
+		ha		hash algorithm
+		signer	signer's name (signer's sk.owner)
+		exp		expiry date
+			— we'll send a set of related certificates, with linked signatures
+		
+	pk, sk:
+		sa		signature algorithm
+		owner	owner's user name
+		...		parameters
+			— the pk, sk won't have an owner, just the key algorithm and parameters
+			— before sending a pk's hash, we'll send the full pk as a proto=pki item
+			— when reading a new key, hash it
+
+	spk	=	signer's pk
+			— sent as itself, and then referred to by its hash
+
+	sign/verify	add signer's name and cert expiration date to data hash (%s %d)
+				b = IP.bebytestoip(hash)	[nb: unsigned]
+				sk.sign(b); pk.verify(b)
+			— the spki-style certificate includes the signer's key hash (issuer=...) and expiry time, so nothing is added
+
+• the protocol is symmetric, described from pov of one side:
+
+	→	version (1)	use "pk v.1" ...
+	←	version (1)	use "pk v.1" ...
+
+	[ can now detect and diagnose local errors:
+		incompatible authentication protocol
+		no authentication information	[locally]
+		missing diffie hellman mod	(p)
+		missing diffie hellman base	(alpha)
+		invalid authentication information	[locally: missing mysk, mypk, cert, or spk]
+		modulus not > 0
+	]
+
+	→	r0 = rand(); alphar0 = (alpha**r0) mod info.p
+	→	info.cert.text		["cert" here combines cert and signature: sa, ha, signer, exp, sig.rsa
+	→	info.mypk.text		[pk type and values]
+
+	←	alphar1
+
+	[ check:
+		info.p <= alphar1	=> implausible parameter value
+		alphar0==alphar1	=> possible replay attack (or loopback)
+	]
+	←	hiscert
+	←	hispk
+
+	[check:
+		info.spk.verify(hiscert, hispk)	||	pk doesn't match certificate
+		hiscert.exp != 0 && hiscert.exp <= now	=> certificate expired
+	]
+
+	→	alphabuf = bytes(b64(alphar0) + b64(alphar1)); info.mysk.sign(alphabuf)  — ie, send signature of alphabuf
+	←	alphacert
+
+	[ check:
+		alphabuf = bytes(b64(alphar1) + b64(alphar0)) [note reversal]; hispk.verify(alphabuf)  || "signature did not match pk"
+	]
+
+	alphar0r1 = alphar1.mod(r0, info.p)
+	secret = trim0(alphar0r1.toByteArray())
+
+	→	"OK"
+	←	read until "OK" [or error]
+
+all these exchanges use msg format. on any error, sendmsgerr. similarly, any receive operation can raise an error
