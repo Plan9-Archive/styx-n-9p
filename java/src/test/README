@@ -1,1 +1,3 @@
-these are just little test programs used at some stage during development
+Many of these are just little test programs used during development.
+
+The run* files are rc scripts that invoke the more general tests, still of interest.
